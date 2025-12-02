@@ -139,7 +139,8 @@
     
 
 
-https://www.youtube.com/iframe_api</script>
+
+<script/www.youtube.com/iframe_api</script>
 <script>
     const API_KEY = 'AIzaSyD7bdPgTIbe_ZrZsNb2SDHXnSnCPzNJweU';
     const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
@@ -147,17 +148,10 @@ https://www.youtube.com/iframe_api</script>
     const ORIGIN = 'https://havsorkesternhome.github.io/SuomiTube';
 
     let ytPlayer; // Global player instance
-    let endTimeout; // Timeout för att stoppa innan slutet
 
     // YouTube API callback
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('videoPlayer', {
-            playerVars: {
-                rel: 0,              // Minimera relaterade videor
-                modestbranding: 1,   // Mindre YouTube-branding
-                controls: 1,
-                showinfo: 0
-            },
             events: {
                 'onStateChange': onPlayerStateChange
             }
@@ -165,15 +159,9 @@ https://www.youtube.com/iframe_api</script>
     }
 
     function onPlayerStateChange(event) {
-        clearTimeout(endTimeout);
-        if (event.data === YT.PlayerState.PLAYING) {
-            const duration = ytPlayer.getDuration();
-            // Stoppa 3 sekunder innan slutet
-            endTimeout = setTimeout(() => {
-                if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-                    goBackToResults();
-                }
-            }, (duration - 3) * 1000);
+        // När videon är slut (state = 0)
+        if (event.data === YT.PlayerState.ENDED) {
+            goBackToResults();
         }
     }
 
@@ -220,7 +208,7 @@ https://www.youtube.com/iframe_api</script>
             const thumbnail = video.snippet.thumbnails.medium.url;
             const item = document.createElement('div');
             item.className = 'video-item';
-            item.innerHTML = `${thumbnail}<div class='video-title'>${title}</div>`;
+            item.innerHTML = `<img src='${thumbnails='video-title'>${title}</div>`;
             item.addEventListener('click', () => showPlayer(videoId));
             grid.appendChild(item);
         });
@@ -255,6 +243,7 @@ https://www.youtube.com/iframe_api</script>
     // Start med Gaming-kategorin
     fetchVideos('minecraft roblox pelivideot suomeksi');
 </script>
+
 
 
 </body>
