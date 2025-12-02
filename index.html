@@ -136,32 +136,11 @@
     <div id="backButton">⬅ Tillbaka</div>
     <div id="errorMessage"></div>
 </div>
-    
-
-<script/www.youtube.com/iframe_api</script>
 <script>
     const API_KEY = 'AIzaSyD7bdPgTIbe_ZrZsNb2SDHXnSnCPzNJweU';
     const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
     const VIDEO_URL = 'https://www.googleapis.com/youtube/v3/videos';
     const ORIGIN = 'https://havsorkesternhome.github.io/SuomiTube';
-
-    let ytPlayer; // Global player instance
-
-    // YouTube API callback
-    function onYouTubeIframeAPIReady() {
-        ytPlayer = new YT.Player('videoPlayer', {
-            events: {
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    }
-
-    function onPlayerStateChange(event) {
-        // När videon är slut (state = 0)
-        if (event.data === YT.PlayerState.ENDED) {
-            goBackToResults();
-        }
-    }
 
     async function fetchVideos(query) {
         try {
@@ -206,7 +185,7 @@
             const thumbnail = video.snippet.thumbnails.medium.url;
             const item = document.createElement('div');
             item.className = 'video-item';
-            item.innerHTML = `<img src='${thumbnails='video-title'>${title}</div>`;
+            item.innerHTML = `<img src='${thumbnail}' alt='${title}' /><div class='video-title'>${title}</div>`;
             item.addEventListener('click', () => showPlayer(videoId));
             grid.appendChild(item);
         });
@@ -215,32 +194,33 @@
     function showPlayer(videoId) {
         const grid = document.getElementById('videoGrid');
         const playerContainer = document.getElementById('playerContainer');
+        const player = document.getElementById('videoPlayer');
         const errorMessage = document.getElementById('errorMessage');
         grid.style.display = 'none';
         playerContainer.style.display = 'block';
         errorMessage.textContent = '';
-        ytPlayer.loadVideoById(videoId);
+        player.src = `https://www.youtube.com/embed/${videoId}?rel=0&enablejsapi=1&modestbranding=1&origin=${encodeURIComponent(ORIGIN)}`;
+        let loaded = false;
+        player.onload = () => { loaded = true; };
+        setTimeout(() => { if (!loaded) { errorMessage.textContent = 'Den här videon kan inte spelas här – välj en annan video.'; } }, 4000);
     }
 
-    function goBackToResults() {
+    document.getElementById('backButton').addEventListener('click', () => {
         const grid = document.getElementById('videoGrid');
         const playerContainer = document.getElementById('playerContainer');
+        const player = document.getElementById('videoPlayer');
         const errorMessage = document.getElementById('errorMessage');
-        ytPlayer.stopVideo();
+        player.src = '';
         errorMessage.textContent = '';
         playerContainer.style.display = 'none';
         grid.style.display = 'grid';
-    }
-
-    document.getElementById('backButton').addEventListener('click', goBackToResults);
+    });
 
     document.getElementById('searchBar').addEventListener('keyup', (e) => {
         if (e.key === 'Enter') { fetchVideos(e.target.value + ' suomeksi'); }
     });
 
-    // Start med Gaming-kategorin
     fetchVideos('minecraft roblox pelivideot suomeksi');
 </script>
-
 </body>
 </html>
