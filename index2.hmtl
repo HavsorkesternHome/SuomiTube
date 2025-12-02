@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SuomiTube Kids</title>
+<style>
+    body {
+        font-family: 'Comic Sans MS', cursive, sans-serif;
+        background: linear-gradient(135deg, #ff6f61, #ffcc70);
+        margin: 0;
+        padding: 0;
+        color: #333;
+        animation: bgAnimation 10s infinite alternate;
+    }
+    @keyframes bgAnimation {
+        0% { background: linear-gradient(135deg, #ff6f61, #ffcc70); }
+        100% { background: linear-gradient(135deg, #70e1f5, #ffd194); }
+    }
+    header {
+        text-align: center;
+        padding: 20px;
+        background-color: #ff4081;
+        color: white;
+        font-size: 2.5em;
+        font-weight: bold;
+        text-shadow: 2px 2px #333;
+        animation: bounce 2s infinite;
+    }
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    #searchBar {
+        display: block;
+        margin: 20px auto;
+        padding: 15px;
+        width: 80%;
+        font-size: 1.2em;
+        border-radius: 10px;
+        border: 3px solid #ff4081;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #categoryButtons {
+        text-align: center;
+        margin: 10px;
+    }
+    .cat-btn {
+        display: inline-block;
+        margin: 5px;
+        padding: 10px 20px;
+        background-color: #ff4081;
+        color: white;
+        font-size: 1em;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .cat-btn:hover {
+        background-color: #e91e63;
+    }
+    .video-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+    .video-item {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        transition: transform 0.3s, box-shadow 0.3s;
+        cursor: pointer;
+    }
+    .video-item:hover {
+        transform: scale(1.08);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    }
+    .video-item img {
+        width: 100%;
+        display: block;
+    }
+    .video-title {
+        padding: 12px;
+        font-size: 1.1em;
+        text-align: center;
+        color: #ff4081;
+        font-weight: bold;
+    }
+    #playerContainer {
+        display: none;
+        text-align: center;
+        padding: 20px;
+    }
+    #playerContainer iframe {
+        width: 90%;
+        height: 500px;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    }
+    #backButton {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #ff4081;
+        color: white;
+        font-size: 1.2em;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #backButton:hover {
+        background-color: #e91e63;
+    }
+    #errorMessage {
+        color: red;
+        font-size: 1.2em;
+        margin-top: 15px;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+<header>🎮 SuomiTube Kids 🎨</header>
+<div id="categoryButtons">
+    <div class="cat-btn" onclick="fetchVideos('minecraft roblox pelivideot suomeksi')">🎮 Gaming</div>
+    <div class="cat-btn" onclick="fetchVideos('askartelu suomeksi')">✂️ Askartelu</div>
+    <div class="cat-btn" onclick="fetchVideos('haasteet vlogit suomeksi')">🔥 Utmaningar</div>
+</div>
+<input type="text" id="searchBar" placeholder="🔎 Hae videoita (t.ex. askartelu)" />
+<div class="video-grid" id="videoGrid"></div>
+<div id="playerContainer">
+    <iframe id="videoPlayer" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><br>
+    <div id="backButton">⬅ Tillbaka</div>
+    <div id="errorMessage"></div>
+</div>
+<script>
+    const API_KEY = 'AIzaSyD7bdPgTIbe_ZrZsNb2SDHXnSnCPzNJweU';
+    const SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
+    const VIDEO_URL = 'https://www.googleapis.com/youtube/v3/videos';
+    const ORIGIN = 'https://havsorkesternhome.github.io/SuomiTube';
+
+    async function fetchVideos(query) {
+        try {
+            const searchUrl = `${SEARCH_URL}?part=snippet&type=video&maxResults=20&q=${encodeURIComponent(query)}&safeSearch=strict&regionCode=FI&relevanceLanguage=fi&key=${API_KEY}`;
+            const searchResponse = await fetch(searchUrl);
+            const searchData = await searchResponse.json();
+            const items = (searchData.items || []).filter(it => it.id && it.id.videoId);
+            const videoIds = items.map(item => item.id.videoId);
+            if (videoIds.length === 0) { displayVideos([]); return; }
+
+            const detailsUrl = `${VIDEO_URL}?part=status,snippet&id=${videoIds.join(',')}&key=${API_KEY}`;
+            const detailsResponse = await fetch(detailsUrl);
+            const detailsData = await detailsResponse.json();
+
+            let filtered = (detailsData.items || []).filter(v => v.status && v.status.embeddable);
+            displayVideos(filtered);
+        } catch (err) {
+            console.error(err);
+            displayVideos([]);
+        }
+    }
+
+    function displayVideos(videos) {
+        const grid = document.getElementById('videoGrid');
+        const playerContainer = document.getElementById('playerContainer');
+        grid.innerHTML = '';
+        playerContainer.style.display = 'none';
+        grid.style.display = 'grid';
+        if (videos.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.gridColumn = '1 / -1';
+            empty.style.textAlign = 'center';
+            empty.style.color = '#fff';
+            empty.style.fontSize = '1.2em';
+            empty.textContent = 'Inga videor hittades. Prova en annan kategori eller sökning.';
+            grid.appendChild(empty);
+            return;
+        }
+        videos.forEach(video => {
+            const videoId = video.id;
+            const title = video.snippet.title;
+            const thumbnail = video.snippet.thumbnails.medium.url;
+            const item = document.createElement('div');
+            item.className = 'video-item';
+            item.innerHTML = `<img src='${thumbnail}' alt='${title}' /><div class='video-title'>${title}</div>`;
+            item.addEventListener('click', () => showPlayer(videoId));
+            grid.appendChild(item);
+        });
+    }
+
+    function showPlayer(videoId) {
+        const grid = document.getElementById('videoGrid');
+        const playerContainer = document.getElementById('playerContainer');
+        const player = document.getElementById('videoPlayer');
+        const errorMessage = document.getElementById('errorMessage');
+        grid.style.display = 'none';
+        playerContainer.style.display = 'block';
+        errorMessage.textContent = '';
+        player.src = `https://www.youtube.com/embed/${videoId}?rel=0&enablejsapi=1&modestbranding=1&origin=${encodeURIComponent(ORIGIN)}`;
+        let loaded = false;
+        player.onload = () => { loaded = true; };
+        setTimeout(() => { if (!loaded) { errorMessage.textContent = 'Den här videon kan inte spelas här – välj en annan video.'; } }, 4000);
+    }
+
+    document.getElementById('backButton').addEventListener('click', () => {
+        const grid = document.getElementById('videoGrid');
+        const playerContainer = document.getElementById('playerContainer');
+        const player = document.getElementById('videoPlayer');
+        const errorMessage = document.getElementById('errorMessage');
+        player.src = '';
+        errorMessage.textContent = '';
+        playerContainer.style.display = 'none';
+        grid.style.display = 'grid';
+    });
+
+    document.getElementById('searchBar').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') { fetchVideos(e.target.value + ' suomeksi'); }
+    });
+
+    fetchVideos('minecraft roblox pelivideot suomeksi');
+</script>
+</body>
+</html>
